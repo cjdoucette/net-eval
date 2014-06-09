@@ -1,0 +1,12 @@
+#!/usr/bin/ruby -w
+
+### BEGIN INIT INFO
+# Provides:        net-eval
+# Required-Start:  $network
+# Required-Stop:   $network
+# Default-Start:   2
+# Default-Stop:
+# Short-Description: Run IP/XIA stack tests
+### END INIT INFO
+
+sleep(10)
