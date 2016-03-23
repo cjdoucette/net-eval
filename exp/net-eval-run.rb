@@ -114,7 +114,7 @@ def create_containers(isIP, num_port, daddr)
     container = File.join(XLXC::LXC, (isIP ? "ip" : "xia") + i.to_s(),
       "rootfs", "net-eval")
     `mkdir -p #{container}`
-    `mount --rbind /home/cody/net-eval #{container}`
+    `mount --rbind .. #{container}`
   end
 
   if isIP
