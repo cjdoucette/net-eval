@@ -32,7 +32,7 @@ static struct argp_option options[] = {
 		"Ethernet address of router (e.g. '11:22:33:44:55:66')"},
 	{"daddr-type",	't', "TYPE",	0,
 		"Type of the destination address template {'ip', 'fb0', "
-		"'fb1', 'fb2', 'fb3', 'via'}"},
+		"'fb1', 'fb2', 'fb3', 'via', 'lpm'}"},
 	{"pkt-len",	'l', "LEN",	0, "Packet lenght in bytes"},
 	{"nnodes",	'n', "COUNT",	0,
 		"Number of nodes (= number of ports + 1)"},
@@ -191,7 +191,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		args->dst_addr_type = arg;
 		if (strcmp(arg, "ip") && strcmp(arg, "fb0") &&
 			strcmp(arg, "fb1") && strcmp(arg, "fb2") &&
-			strcmp(arg, "fb3") && strcmp(arg, "via"))
+			strcmp(arg, "fb3") && strcmp(arg, "via") &&
+			strcmp(arg, "lpm"))
 			argp_error(state, "'%s' is not a valid type", arg);
 		break;
 

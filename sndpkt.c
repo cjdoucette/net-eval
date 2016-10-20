@@ -118,8 +118,10 @@ static void set_ipv4_template(char *template, uint32_t dst_ip, uint16_t sum)
 /* XXX This constant should come from the kernel once XIA goes mainline. */
 /* Autonomous Domain Principal */
 #define XIDTYPE_AD (__cpu_to_be32(0x10))
+/* Longest Prefix Matching Principal */
+#define XIDTYPE_LPM (__cpu_to_be32(0x21))
 
-static int fill_dst_dag(struct xiphdr *xip, int packet_size)
+static int fill_dst_dag_ad(struct xiphdr *xip, int packet_size)
 {
 	static const struct xia_row unknown_ad[] = {
 		{.s_xid = {.xid_type = XIDTYPE_AD,
@@ -149,6 +151,24 @@ static int fill_dst_dag(struct xiphdr *xip, int packet_size)
 	return hdr_len;
 }
 
+static int fill_dst_dag_lpm(struct xiphdr *xip, int packet_size)
+{
+	static const struct xia_row unknown_lpm[] = {
+		{.s_xid = {.xid_type = XIDTYPE_LPM,
+			.xid_id = {0,  1,  2,  3,  4,  5, 6, 7, 8, 9,
+				  10, 11, 12, 13, 14, 15, 0, 0, 0, 1}},
+			.s_edge.i = XIA_EMPTY_EDGES},
+	};
+	int hdr_len = xip_hdr_len(xip);
+
+	if (packet_size < hdr_len)
+		errx(1, "Packet size must be larger or equal to %i",
+			hdr_len + ETHER_HDR_LEN);
+	memmove(xip->dst_addr, unknown_lpm,
+		xip->num_dst * sizeof(struct xia_row));
+	return hdr_len;
+}
+
 static void make_xia_template(char *packet, int packet_size,
 	const char *dst_addr_type, int *poffset)
 {
@@ -172,31 +192,35 @@ static void make_xia_template(char *packet, int packet_size,
 	/* Insert destination. */
 	if (!strcmp(dst_addr_type, "fb0")) {
 		xip->num_dst = 1;
-		hdr_len = fill_dst_dag(xip, packet_size);
+		hdr_len = fill_dst_dag_ad(xip, packet_size);
 		xip->dst_addr[0].s_edge.a[0] = 0;
 	} else if (!strcmp(dst_addr_type, "fb1")) {
 		xip->num_dst = 2;
-		hdr_len = fill_dst_dag(xip, packet_size);
+		hdr_len = fill_dst_dag_ad(xip, packet_size);
 		xip->dst_addr[1].s_edge.a[0] = 0;
 		xip->dst_addr[1].s_edge.a[1] = 1;
 	} else if (!strcmp(dst_addr_type, "fb2")) {
 		xip->num_dst = 3;
-		hdr_len = fill_dst_dag(xip, packet_size);
+		hdr_len = fill_dst_dag_ad(xip, packet_size);
 		xip->dst_addr[2].s_edge.a[0] = 0;
 		xip->dst_addr[2].s_edge.a[1] = 1;
 		xip->dst_addr[2].s_edge.a[2] = 2;
 	} else if (!strcmp(dst_addr_type, "fb3")) {
 		xip->num_dst = 4;
-		hdr_len = fill_dst_dag(xip, packet_size);
+		hdr_len = fill_dst_dag_ad(xip, packet_size);
 		xip->dst_addr[3].s_edge.a[0] = 0;
 		xip->dst_addr[3].s_edge.a[1] = 1;
 		xip->dst_addr[3].s_edge.a[2] = 2;
 		xip->dst_addr[3].s_edge.a[3] = 3;
 	} else if (!strcmp(dst_addr_type, "via")) {
 		xip->num_dst = 2;
-		hdr_len = fill_dst_dag(xip, packet_size);
+		hdr_len = fill_dst_dag_ad(xip, packet_size);
 		xip->dst_addr[0].s_edge.a[0] = 1;
 		xip->dst_addr[1].s_edge.a[0] = 0;
+	} else if (!strcmp(dst_addr_type, "lpm")) {
+		xip->num_dst = 1;
+		hdr_len = fill_dst_dag_lpm(xip, packet_size);
+		xip->dst_addr[0].s_edge.a[0] = 0;
 	} else {
 		errx(1, "Destination type `%s' is not valid", dst_addr_type);
 	}

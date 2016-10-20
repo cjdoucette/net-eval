@@ -20,7 +20,7 @@ ZIPFS     = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0,
              1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
 SIZES     = [64, 128, 256, 512, 1024, 2048]
 UPDATES   = [0, 10 ** 0, 10 ** 1, 10 ** 2, 10 ** 3, 10 ** 4, 10 ** 5] 
-DADDRS    = ["ip", "fb0", "fb1", "fb2", "fb3", "via"]
+DADDRS    = ["ip", "fb0", "fb1", "fb2", "fb3", "via", "lpm"]
 MAX_PORTS = 32
 
 # Default values for independent variables.
@@ -322,7 +322,7 @@ def daddr(exp_num, num_trials, stacks, hids, options)
       elsif !options[:ip] && options[:xia] && daddr == "ip"
         next
       # Skip 64 byte packets for fb1, fb2, fb3 and via.
-      elsif size == 64 && daddr != "ip" && daddr != "fb0"
+      elsif size == 64 && daddr != "ip" && daddr != "fb0" && daddr != "lpm"
         next
       # Skip 128 byte packets for fb3.
       elsif size == 128 && daddr == "fb3"

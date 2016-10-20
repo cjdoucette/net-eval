@@ -38,15 +38,15 @@ static void put_ipv4_rtable_add(void *buf, int seq, in_addr_t dst, int mask,
 }
 
 /* XXX These constants should come from the kernel once XIA goes mainline. */
-/* Autonomous Domain Principal */
-#define XIDTYPE_AD (__cpu_to_be32(0x10))
+/* Longest Prefix Matching Principal */
+#define XIDTYPE_LPM (__cpu_to_be32(0x21))
 /* Host Principal */
 #define XIDTYPE_HID (__cpu_to_be32(0x11))
 #define AF_XIA 41
 #define XRTABLE_MAIN_INDEX 1
 
 static void put_xip_rtable_add(void *buf, int seq, const union net_addr *from,
-	const union net_addr *gateway, int update)
+	int mask, const union net_addr *gateway, int update)
 {
 	struct nlmsghdr *nlh;
 	struct rtmsg *rtm;
@@ -69,12 +69,15 @@ static void put_xip_rtable_add(void *buf, int seq, const union net_addr *from,
 	rtm->rtm_scope = RT_SCOPE_UNIVERSE;
 	rtm->rtm_flags = 0;
 
-	dst.xid_type = XIDTYPE_AD;
+	dst.xid_type = XIDTYPE_LPM;
 	memmove(dst.xid_id, from->id, sizeof(dst.xid_id));
 	gw.xid_type = XIDTYPE_HID;
 	memmove(gw.xid_id, gateway->id, sizeof(gw.xid_id));
 
 	mnl_attr_put(nlh, RTA_DST, sizeof(dst), &dst);
+	/* Prefix length is only needed for the LPM. */
+	mnl_attr_put(nlh, RTA_PROTOINFO, sizeof((__u8)mask),
+		(__u8 *)&mask);
 	mnl_attr_put(nlh, RTA_GATEWAY, sizeof(gw), &gw);
 
 	/*
@@ -176,7 +179,7 @@ static void add_xip_route_to_batch(struct rtnl_batch *b,
 	const struct net_prefix *prefix, const struct port *port, int update)
 {
 	put_xip_rtable_add(mnl_nlmsg_batch_current(b->batch), b->seq++,
-		&prefix->addr, &port->gateway, update);
+		&prefix->addr, prefix->mask, &port->gateway, update);
 
 	/* Is there room for more messages in this batch? */
 	if (!mnl_nlmsg_batch_next(b->batch))
